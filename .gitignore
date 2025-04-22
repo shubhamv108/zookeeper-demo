@@ -1,0 +1,8 @@
+.idea/
+*/.idea/
+*.iml
+*/*.iml
+
+zoo_data/
+logs/
+data/

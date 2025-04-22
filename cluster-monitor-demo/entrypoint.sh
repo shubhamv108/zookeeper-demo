@@ -1,0 +1,2 @@
+#!/bin/sh
+java -Xms64M -Xmx128M -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=8009 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -cp app.jar "$MAIN_CLASS"

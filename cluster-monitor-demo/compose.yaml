@@ -1,0 +1,169 @@
+services:
+  zookeeper1:
+    image: zookeeper:latest
+    container_name: zookeeper1
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_PORT: 2181
+#      ZOO_SERVERS: server.1=zookeeper1:2888:3888
+    volumes:
+      - ../apache-zookeeper-3.9.3-bin/conf/zoo.cfg:/conf/zoo.cfg
+      - ./zoo_data/data:/data
+      - ./zoo_data/datalog:/datalog
+    command: >
+      sh -c "mkdir -p /data && touch /data/myid && chmod 777 /data/myid && echo 1 > /data/myid && zkServer.sh start-foreground /conf/zoo.cfg"
+    networks:
+      - net
+
+  zookeeper2:
+    image: zookeeper:latest
+    container_name: zookeeper2
+    restart: unless-stopped
+    ports:
+      - "2182:2181"
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_PORT: 2181
+#      ZOO_SERVERS: server.3=zookeeper2:2888:3888
+    volumes:
+      - ../apache-zookeeper-3.9.3-bin/conf/zoo.cfg:/conf/zoo.cfg
+      - ./zoo_data/data:/data
+      - ./zoo_data/datalog:/datalog
+    command: >
+      sh -c "mkdir -p /data && touch /data/myid && chmod 777 /data/myid && echo 2 > /data/myid && zkServer.sh start-foreground /conf/zoo.cfg"
+    networks:
+      - net
+
+  zookeeper3:
+    image: zookeeper:latest
+    container_name: zookeeper3
+    restart: unless-stopped
+    ports:
+      - "2183:2181"  # ZooKeeper client port
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_PORT: 2181
+#      ZOO_SERVERS: server.3=zookeeper3:2888:3888
+    volumes:
+      - ../apache-zookeeper-3.9.3-bin/conf/zoo.cfg:/conf/zoo.cfg
+      - ./zoo_data/data:/data
+      - ./zoo_data/datalog:/datalog
+    command: >
+      sh -c "mkdir -p /data && touch /data/myid && chmod 777 /data/myid && echo 3 > /data/myid && zkServer.sh start-foreground /conf/zoo.cfg"
+    networks:
+      - net
+
+  delay:
+    image: alpine
+    command: [ "sh", "-c", "sleep 10_000" ]
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+
+  cluster-monitor:
+    container_name: cluster-monitor
+    hostname: cluster-monitor
+    image: docker.io/library/app
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        END: 'TEST'
+    volumes:
+      - "/tmp:/tmp"
+    ports:
+      - '8080:8080'
+      - '8009:8009'
+    restart: 'on-failure'
+    depends_on:
+      - delay
+    environment:
+      - MAIN_CLASS=code.shubham.ClusterMonitor
+      - zookeeperConnectString=zookeeper1:2181,zookeeper2:2182,zookeeper3:2183
+    networks:
+      - net
+
+  app1:
+    container_name: app1
+    hostname: app1
+    image: docker.io/library/app
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        END: 'TEST'
+    volumes:
+      - "/tmp:/tmp"
+    ports:
+      - '8081:8080'
+      - '8019:8009'
+    restart: 'on-failure'
+    depends_on:
+      - cluster-monitor
+    environment:
+      - MAIN_CLASS=code.shubham.Application
+      - zookeeperConnectString=zookeeper1:2181,zookeeper2:2182,zookeeper3:2183
+    networks:
+      - net
+
+  app2:
+    container_name: app2
+    hostname: app2
+    image: docker.io/library/app
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        END: 'TEST'
+    volumes:
+      - "/tmp:/tmp"
+    ports:
+      - '8082:8080'
+      - '8029:8009'
+    restart: 'on-failure'
+    depends_on:
+      - cluster-monitor
+    environment:
+      - MAIN_CLASS=code.shubham.Application
+      - zookeeperConnectString=zookeeper1:2181,zookeeper2:2182,zookeeper3:2183
+    networks:
+      - net
+
+  app3:
+    container_name: app3
+    hostname: app3
+    image: docker.io/library/app
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        END: 'TEST'
+    volumes:
+      - "/tmp:/tmp"
+    ports:
+      - '8083:8080'
+      - '8039:8009'
+    restart: 'on-failure'
+    depends_on:
+      - cluster-monitor
+    environment:
+      - MAIN_CLASS=code.shubham.Application
+      - zookeeperConnectString=zookeeper1:2181,zookeeper2:2182,zookeeper3:2183
+    networks:
+      - net
+
+networks:
+  net:
+    driver: bridge

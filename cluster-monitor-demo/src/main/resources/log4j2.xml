@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" packages="">
+    <Properties>
+        <Property name="log.level">info</Property>
+        <Property name="log.file.name">logs/app.log</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- Actual Console Appender -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36}.%M() - %msg%n"/>
+        </Console>
+
+        <!-- File Appender -->
+        <RollingFile name="File" fileName="${log.file.name}" filePattern="logs/app-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36}.%M() - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
+        </RollingFile>
+
+        <!-- Async Console Appender -->
+        <Async name="AsyncConsole" includeLocation="true">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="File"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <!-- Root logger -->
+        <Root level="${log.level}">
+            <AppenderRef ref="AsyncConsole"/>
+        </Root>
+    </Loggers>
+</Configuration>
